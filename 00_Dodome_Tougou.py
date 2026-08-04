@@ -96,6 +96,20 @@ def _select_output_dir(default_dir: Path) -> Path:
     return Path(path) if path else default_dir
 
 
+def _confirm_open_folder(report_path: Path) -> bool:
+    """計算完了後、出力フォルダを自動で開くかどうかをダイアログで確認する。"""
+    import tkinter as tk
+    from tkinter import messagebox
+
+    root = tk.Tk()
+    root.withdraw()
+    answer = messagebox.askyesno(
+        "計算完了", f"計算書を出力しました:\n{report_path}\n\n出力フォルダを開きますか？"
+    )
+    root.destroy()
+    return answer
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         input_path = sys.argv[1]
@@ -110,10 +124,11 @@ if __name__ == "__main__":
     else:
         output_dir = _select_output_dir(Path(input_path).parent / "output")
 
-    run(input_path, output_dir)
+    report_path = run(input_path, output_dir)
 
-    try:
-        import os
-        os.startfile(output_dir)  # Windows専用。他OSでは黙って無視する。
-    except AttributeError:
-        pass
+    if _confirm_open_folder(report_path):
+        try:
+            import os
+            os.startfile(output_dir)  # Windows専用。他OSでは黙って無視する。
+        except AttributeError:
+            pass

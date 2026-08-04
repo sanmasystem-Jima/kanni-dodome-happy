@@ -78,7 +78,8 @@ fi
 echo "何を実行しますか？"
 echo "  1) 入力フォームを開く（条件入力・input.json作成）"
 echo "  2) 計算を実行する（input.jsonから計算・計算書出力）"
-echo "  3) 終了"
+echo "  3) 入力フォームを開いてから続けて計算を実行する（連続実行）"
+echo "  4) 終了"
 echo
 read -rp "番号を選んでEnter: " CHOICE
 echo
@@ -98,6 +99,26 @@ case "$CHOICE" in
     2)
         "$VENV_PY" "$SCRIPT_DIR/00_Dodome_Tougou.py"
         STATUS=$?
+        ;;
+    3)
+        if [ "$TK_OK" -eq 0 ]; then
+            echo "[エラー] tkinter が利用できないため、入力フォームを開けません。"
+            echo "以下を実行してから、もう一度お試しください:"
+            echo "  sudo apt install python3-tk"
+            echo "  （実行後、.venv フォルダを削除して再度このランチャーを起動してください）"
+            pause_and_exit 1
+        fi
+        echo "--- 入力フォームを開きます。保存して閉じると続けて計算を実行します ---"
+        "$VENV_PY" "$SCRIPT_DIR/tools/01_Dodome_Input_GUI.py"
+        STATUS=$?
+        if [ "$STATUS" -ne 0 ]; then
+            echo "[エラー] 入力フォームでエラーが発生したため、計算は実行しません。"
+        else
+            echo
+            echo "--- 続けて計算を実行します ---"
+            "$VENV_PY" "$SCRIPT_DIR/00_Dodome_Tougou.py"
+            STATUS=$?
+        fi
         ;;
     *)
         exit 0
