@@ -16,6 +16,15 @@ HERE = Path(__file__).parent
 
 # 土質タイプ別の目安値（γ, γ', Ka）。あくまで概略検討・初期入力の参考値であり、
 # 実際の地盤調査結果（土質試験・N値等）がある場合はそちらを優先すること。
+#
+# 礫質土: 単位体積重量は道路橋示方書系の目安値（自然地盤・砂及び砂礫 18〜20kN/m3）、
+# Kaは擁壁工指針の裏込め土内部摩擦角（礫質土 φ=35°）から算出。国交省地方整備局
+# 設計要領に典拠あり（https://www.cbr.mlit.go.jp/kawatomizu/kouzou/pdf/08_04sekkeiippan2.pdf）。
+#
+# 玉石まじり砂質土: 公的な目安値は存在しない（同資料も「混合割合及び状態に応じて
+# 適当な値を定める」としている）。以下は礫質土（φ=35°→Ka=0.27）を土質分類上の
+# 目安として流用し、玉石分だけ単位体積重量を割増した「たたき台」の値であり、
+# 出典に基づく値ではない。混入率欄で判断根拠を残した上で必ず調整すること。
 SOIL_TYPE_REFERENCE = [
     ("(手動入力)", None),
     ("粘性土（非常に軟らかい, N値<2）", {"gamma": 1.6, "gamma_prime": 0.7, "Ka": 0.50}),
@@ -24,6 +33,8 @@ SOIL_TYPE_REFERENCE = [
     ("砂質土（ゆるい, N値<10）", {"gamma": 1.7, "gamma_prime": 0.9, "Ka": 0.40}),
     ("砂質土（中位, N値10〜30）", {"gamma": 1.8, "gamma_prime": 1.0, "Ka": 0.33}),
     ("砂質土（密, N値>30）", {"gamma": 1.9, "gamma_prime": 1.1, "Ka": 0.27}),
+    ("礫質土（砂礫）", {"gamma": 2.0, "gamma_prime": 1.1, "Ka": 0.27}),
+    ("玉石まじり砂質土（目安なし・たたき台）", {"gamma": 2.1, "gamma_prime": 1.2, "Ka": 0.27}),
     ("ローム", {"gamma": 1.4, "gamma_prime": 0.6, "Ka": 0.45}),
     ("埋土（雑多）", {"gamma": 1.7, "gamma_prime": 0.9, "Ka": 0.45}),
 ]
@@ -51,6 +62,7 @@ class SoilLayerRow:
         ("gamma", "単位体積重量(γ) (tf/m3)"),
         ("gamma_prime", "水中単位体積重量(γ') (tf/m3)"),
         ("Ka", "主働土圧係数(Ka)"),
+        ("gravel_content", "礫・玉石混入率 (%) 任意"),
     ]
 
     def __init__(self, parent, on_delete):
@@ -198,6 +210,21 @@ class DodomeInputGUI:
 
     # ---- データ変換 ----
 
+    def _layer_to_dict(self, row) -> dict:
+        """土質層1行をinput.json用の辞書に変換する。混入率は任意項目のため、
+        空欄の場合はキー自体を省略する（計算には使わない記録用の値）。"""
+        values = row.get()
+        layer = {
+            "thickness": float(values["thickness"]),
+            "gamma": float(values["gamma"]),
+            "gamma_prime": float(values["gamma_prime"]),
+            "Ka": float(values["Ka"]),
+        }
+        gravel_content = values.get("gravel_content", "").strip()
+        if gravel_content:
+            layer["gravel_content"] = float(gravel_content)
+        return layer
+
     def _to_raw_dict(self) -> dict:
         try:
             return {
@@ -210,15 +237,7 @@ class DodomeInputGUI:
                     "z1": float(self.z1.get()),
                     "z2": float(self.z2.get()),
                 },
-                "soil_layers": [
-                    {
-                        "thickness": float(row.get()["thickness"]),
-                        "gamma": float(row.get()["gamma"]),
-                        "gamma_prime": float(row.get()["gamma_prime"]),
-                        "Ka": float(row.get()["Ka"]),
-                    }
-                    for row in self.layer_rows
-                ],
+                "soil_layers": [self._layer_to_dict(row) for row in self.layer_rows],
                 "water": {
                     "gl_back": float(self.gl_back.get()),
                     "gl_excavation": float(self.gl_excavation.get()),
@@ -245,7 +264,7 @@ class DodomeInputGUI:
         self.layer_rows.clear()
         for layer in raw["soil_layers"]:
             self.add_layer_row()
-            self.layer_rows[-1].set(layer)
+            self.layer_rows[-1].set(layer)  # 混入率が無い層は空欄のまま（新規行は初期値が空）
         if not self.layer_rows:
             self.add_layer_row()
 

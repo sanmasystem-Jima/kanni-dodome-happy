@@ -144,6 +144,8 @@ def _plot_soil_column(dodome, out_path):
             f"γ={layer['gamma']}  γ'={layer['gamma_prime']}\n"
             f"Ka={layer['Ka']}"
         )
+        if layer.get("gravel_content") is not None:
+            label += f"\n礫・玉石混入率 {layer['gravel_content']}%"
         ax.text(col_right + 0.15, (top + bottom) / 2, label, fontsize=8, va="center", color="black")
 
     if gl_back > 0:
@@ -201,9 +203,14 @@ def _plot_section(dodome, out_path):
             break
         bottom = min(cum, H)
         ax.plot([-half_back, 0], [top, top], color="black", linewidth=0.5, linestyle="--")
+        section_label = (
+            f"層厚{layer['thickness']}m γ={layer['gamma']} γ'={layer['gamma_prime']} Ka={layer['Ka']}"
+        )
+        if layer.get("gravel_content") is not None:
+            section_label += f" 混入率{layer['gravel_content']}%"
         ax.text(
             -half_back + 0.05, (top + bottom) / 2,
-            f"層厚{layer['thickness']}m γ={layer['gamma']} γ'={layer['gamma_prime']} Ka={layer['Ka']}",
+            section_label,
             fontsize=6.5, va="center",
         )
 

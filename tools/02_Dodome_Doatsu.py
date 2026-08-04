@@ -81,6 +81,11 @@ def compute_doatsu(data):
                 "gamma": layer.gamma,
                 "gamma_prime": layer.gamma_prime,
                 "Ka": layer.Ka,
+                **(
+                    {"gravel_content": layer.gravel_content}
+                    if layer.gravel_content is not None
+                    else {}
+                ),
             }
             for layer in data.soil_layers
         ],

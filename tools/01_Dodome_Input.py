@@ -24,6 +24,7 @@ class SoilLayer:
     gamma: float
     gamma_prime: float
     Ka: float
+    gravel_content: float | None = None  # 礫・玉石混入率(%)。任意の記録用項目で計算には使わない。
 
 
 @dataclass
@@ -69,6 +70,9 @@ def parse_input(raw: dict) -> DodomeInput:
             gamma=float(layer["gamma"]),
             gamma_prime=float(layer["gamma_prime"]),
             Ka=float(layer["Ka"]),
+            gravel_content=(
+                float(layer["gravel_content"]) if "gravel_content" in layer else None
+            ),
         )
         for layer in raw["soil_layers"]
     ]
