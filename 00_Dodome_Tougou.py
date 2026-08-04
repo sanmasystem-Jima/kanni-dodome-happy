@@ -22,10 +22,8 @@ def _load_module(name, filename):
     return module
 
 
-def run(input_path, output_dir):
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
+def compute(input_path):
+    """input.json を読み込み、計算する（ファイル出力は行わない）。"""
     m01 = _load_module("dodome_input", "01_Dodome_Input.py")
     m02 = _load_module("dodome_doatsu", "02_Dodome_Doatsu.py")
     m03 = _load_module("dodome_danmenryoku", "03_Dodome_Danmenryoku.py")
@@ -39,9 +37,6 @@ def run(input_path, output_dir):
         sys.exit(1)
 
     doatsu = m02.compute_doatsu(data)
-    (output_dir / "doatsu_data.json").write_text(
-        json.dumps(doatsu, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
 
     dodome = m03.compute_danmenryoku(doatsu)
     for w in dodome["warnings"]:
@@ -54,6 +49,17 @@ def run(input_path, output_dir):
         dodome["selection_warning"] = str(e)
         print(f"[警告] {e}", file=sys.stderr)
 
+    return doatsu, dodome, m06
+
+
+def write_outputs(doatsu, dodome, m06, output_dir):
+    """計算結果を output_dir に書き出す（JSON成果物 + 計算書）。"""
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    (output_dir / "doatsu_data.json").write_text(
+        json.dumps(doatsu, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     (output_dir / "dodome_data.json").write_text(
         json.dumps(dodome, ensure_ascii=False, indent=2), encoding="utf-8"
     )
@@ -61,6 +67,12 @@ def run(input_path, output_dir):
     report_path = m06.generate_report(dodome, output_dir)
     print(f"完了: {report_path}")
     return report_path
+
+
+def run(input_path, output_dir):
+    """input.json から計算書までを一括実行する（出力先が既に決まっている場合用）。"""
+    doatsu, dodome, m06 = compute(input_path)
+    return write_outputs(doatsu, dodome, m06, output_dir)
 
 
 def _select_input_path() -> str:
@@ -71,26 +83,30 @@ def _select_input_path() -> str:
 
     root = tk.Tk()
     root.withdraw()
+    root.attributes("-topmost", True)
     path = filedialog.askopenfilename(
         title="計算する input.json を選択",
         filetypes=[("JSON", "*.json")],
         initialdir=Path(__file__).parent,
+        parent=root,
     )
     root.destroy()
     return path
 
 
 def _select_output_dir(default_dir: Path) -> Path:
-    """コマンドライン引数が無い場合、ダイアログで出力先フォルダを選ばせる。
+    """計算完了後、ダイアログで出力先フォルダを選ばせる。
     キャンセル時は default_dir（input.jsonと同じ場所のoutput）を使う。"""
     import tkinter as tk
     from tkinter import filedialog
 
     root = tk.Tk()
     root.withdraw()
+    root.attributes("-topmost", True)
     path = filedialog.askdirectory(
         title="計算書の保存先フォルダを選択（キャンセルで既定のoutputフォルダ）",
         initialdir=default_dir if default_dir.exists() else default_dir.parent,
+        parent=root,
     )
     root.destroy()
     return Path(path) if path else default_dir
@@ -103,11 +119,32 @@ def _confirm_open_folder(report_path: Path) -> bool:
 
     root = tk.Tk()
     root.withdraw()
+    root.attributes("-topmost", True)
     answer = messagebox.askyesno(
-        "計算完了", f"計算書を出力しました:\n{report_path}\n\n出力フォルダを開きますか？"
+        "計算完了", f"計算書を出力しました:\n{report_path}\n\n出力フォルダを開きますか？",
+        parent=root,
     )
     root.destroy()
     return answer
+
+
+def _open_folder(folder: Path) -> None:
+    """OSに応じて出力フォルダをファイルマネージャで開く。"""
+    import os
+    import platform
+    import subprocess
+
+    folder = str(Path(folder).resolve())
+    system = platform.system()
+    try:
+        if system == "Windows":
+            os.startfile(folder)
+        elif system == "Darwin":
+            subprocess.run(["open", folder], check=True)
+        else:
+            subprocess.run(["xdg-open", folder], check=True)
+    except Exception as e:
+        print(f"[警告] 出力フォルダを開けませんでした: {e}", file=sys.stderr)
 
 
 if __name__ == "__main__":
@@ -121,14 +158,11 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 2:
         output_dir = Path(sys.argv[2])
+        report_path = run(input_path, output_dir)
     else:
+        doatsu, dodome, m06 = compute(input_path)
         output_dir = _select_output_dir(Path(input_path).parent / "output")
-
-    report_path = run(input_path, output_dir)
+        report_path = write_outputs(doatsu, dodome, m06, output_dir)
 
     if _confirm_open_folder(report_path):
-        try:
-            import os
-            os.startfile(output_dir)  # Windows専用。他OSでは黙って無視する。
-        except AttributeError:
-            pass
+        _open_folder(output_dir)
