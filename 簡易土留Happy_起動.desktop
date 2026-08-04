@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=簡易土留Happy(矢板安定計算)
+Comment=矢板安定計算ツールを起動します(引数不要、ダブルクリックで起動)
+Exec=qterminal -e /media/jima/ボリューム/簡易土留Happy/簡易土留Happy_起動.sh
+Icon=system-run
+Terminal=false
+Categories=Utility;

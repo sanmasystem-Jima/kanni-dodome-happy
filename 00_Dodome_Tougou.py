@@ -80,6 +80,22 @@ def _select_input_path() -> str:
     return path
 
 
+def _select_output_dir(default_dir: Path) -> Path:
+    """コマンドライン引数が無い場合、ダイアログで出力先フォルダを選ばせる。
+    キャンセル時は default_dir（input.jsonと同じ場所のoutput）を使う。"""
+    import tkinter as tk
+    from tkinter import filedialog
+
+    root = tk.Tk()
+    root.withdraw()
+    path = filedialog.askdirectory(
+        title="計算書の保存先フォルダを選択（キャンセルで既定のoutputフォルダ）",
+        initialdir=default_dir if default_dir.exists() else default_dir.parent,
+    )
+    root.destroy()
+    return Path(path) if path else default_dir
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         input_path = sys.argv[1]
@@ -89,7 +105,11 @@ if __name__ == "__main__":
             print("入力ファイルが選択されなかったため終了します。")
             sys.exit(0)
 
-    output_dir = sys.argv[2] if len(sys.argv) > 2 else Path(input_path).parent / "output"
+    if len(sys.argv) > 2:
+        output_dir = Path(sys.argv[2])
+    else:
+        output_dir = _select_output_dir(Path(input_path).parent / "output")
+
     run(input_path, output_dir)
 
     try:
