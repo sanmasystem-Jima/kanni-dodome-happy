@@ -1,0 +1,42 @@
+{
+  "project_name": "001",
+  "excavation": {
+    "H": 2.5,
+    "delta": 0.01
+  },
+  "wales": {
+    "z1": 0.3,
+    "z2": 0.5
+  },
+  "soil_layers": [
+    {
+      "thickness": 1.2,
+      "gamma": 1.6,
+      "gamma_prime": 0.7,
+      "Ka": 0.5
+    },
+    {
+      "thickness": 0.6,
+      "gamma": 1.7,
+      "gamma_prime": 0.9,
+      "Ka": 0.4
+    },
+    {
+      "thickness": 0.7,
+      "gamma": 1.9,
+      "gamma_prime": 1.1,
+      "Ka": 0.27
+    }
+  ],
+  "water": {
+    "gl_back": 0.5,
+    "gl_excavation": 2.5
+  },
+  "surcharge": {
+    "q": 10.0
+  },
+  "material": {
+    "sigma_a": 1800.0,
+    "yaita_spec_file": "yaita_spec.json"
+  }
+}

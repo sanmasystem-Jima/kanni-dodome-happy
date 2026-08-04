@@ -1,0 +1,9 @@
+# Python
+__pycache__/
+*.pyc
+
+# 別モデルの参考資料（不採用・仕様外）
+（tabuse）矢板安定計算001.docx
+
+# 作業用ファイル
+Thumbs.db

@@ -1,0 +1,25 @@
+{
+  "project_name": "サンプル現場",
+  "excavation": {
+    "H": 2.8,
+    "delta": 0.01
+  },
+  "wales": {
+    "z1": 0.15,
+    "z2": 2.20
+  },
+  "soil_layers": [
+    {"thickness": 2.8, "gamma": 1.7, "gamma_prime": 0.8, "Ka": 0.5}
+  ],
+  "water": {
+    "gl_back": 1.6,
+    "gl_excavation": 2.8
+  },
+  "surcharge": {
+    "q": 1.0
+  },
+  "material": {
+    "sigma_a": 1800,
+    "yaita_spec_file": "yaita_spec.json"
+  }
+}
